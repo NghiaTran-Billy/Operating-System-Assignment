@@ -46,10 +46,31 @@ struct vm_area_struct *get_vma_by_num(struct mm_struct *mm, int vmaid)
   return pvma;
 }
 
+/* __mm_swap_page - swap OUT: copy RAM frame vicfpn into swap frame swpfpn
+ * (kernel side of SYSMEM_SWP_OP). The frame numbers are validated against the
+ * size of the two devices before any byte is copied.
+ */
 int __mm_swap_page(struct pcb_t *caller, addr_t vicfpn , addr_t swpfpn)
 {
-    __swap_cp_page(caller->krnl->mram, vicfpn, caller->krnl->active_mswp, swpfpn);
-    return 0;
+#ifdef MM64
+    const addr_t pgsz = PAGING64_PAGESZ;
+#else
+    const addr_t pgsz = PAGING_PAGESZ;
+#endif
+    struct memphy_struct *mram, *mswp;
+
+    if (caller == NULL || caller->krnl == NULL)
+        return -1;
+
+    mram = caller->krnl->mram;
+    mswp = caller->krnl->active_mswp;
+    if (mram == NULL || mswp == NULL)
+        return -1;
+
+    if (vicfpn >= (addr_t)mram->maxsz / pgsz || swpfpn >= (addr_t)mswp->maxsz / pgsz)
+        return -1;
+
+    return __swap_cp_page(mram, vicfpn, mswp, swpfpn);
 }
 
 /*get_vm_area_node - get vm area for a number of pages

@@ -163,6 +163,11 @@ int validate_overlap_vm_area(struct pcb_t *caller, int vmaid, addr_t vmastart, a
 int get_free_vmrg_area(struct pcb_t *caller, int vmaid, int size, struct vm_rg_struct *newrg);
 int inc_vma_limit(struct pcb_t *caller, int vmaid, addr_t inc_sz);
 int find_victim_page(struct mm_struct* mm, addr_t *pgn);
+int free_pcb_memph(struct pcb_t *caller);
+int libmem_evict_page(struct pcb_t *caller, addr_t *retfpn);
+int pg_getpage(struct mm_struct *mm, addr_t pgn, addr_t *fpn, struct pcb_t *caller);
+int pg_getval(struct mm_struct *mm, addr_t addr, BYTE *data, struct pcb_t *caller);
+int pg_setval(struct mm_struct *mm, addr_t addr, BYTE value, struct pcb_t *caller);
 struct vm_area_struct *get_vma_by_num(struct mm_struct *mm, int vmaid);
 
 /* MEM/PHY protypes */
