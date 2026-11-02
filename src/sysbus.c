@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "sysbus.h"
+#include "os-mm.h"
 
 // Maximum number of memory banks supported
 #define MAX_MEMORY_BANKS 8
@@ -29,6 +30,16 @@ typedef struct {
 // Array of memory banks
 static memory_bank_t_struct g_banks[MAX_MEMORY_BANKS] = {0};
 static int g_bank_count = 0;
+
+// ham nay cua sv5 them vao de noi ram vao bus
+void sysbus_attach_os_ram(struct memphy_struct *mram) {
+    if (mram != NULL && mram->storage != NULL) {
+        g_banks[0].data = (uint8_t *)mram->storage;
+        g_banks[0].size = (size_t)mram->maxsz;
+        g_banks[0].initialized = 1;
+        g_bank_count = 1;
+    }
+}
 
 // Initialize a memory bank with given size in bytes
 memory_bank_t memory_bank_init(size_t size_bytes) {
@@ -138,7 +149,7 @@ int dpi_bank_write32_legacy(long long offset, int value) {
     //        (void*)((size_t)offset), *(unsigned int*)&value, *(unsigned int*)&value);
     memcpy(dst,  &value, 4);
     //fflush(stdout);
-       
+        
     return 0;
 }
 
@@ -155,4 +166,3 @@ void dma_done_callback(void)
 #ifdef __cplusplus
 }
 #endif
-
