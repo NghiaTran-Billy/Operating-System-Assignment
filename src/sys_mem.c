@@ -13,7 +13,7 @@
 #include "libmem.h"
 #include "queue.h"
 #include <stdlib.h>
-
+#include <pthread.h>
 #ifdef MM64
 #include "mm64.h"
 #else
@@ -21,34 +21,32 @@
 #endif
 
 //typedef char BYTE;
-
+static pthread_mutex_t queue_lock;
 int __sys_memmap(struct krnl_t *krnl, uint32_t pid, struct sc_regs* regs)
 {
+    if (krnl == NULL || krnl->running_list == NULL || regs == NULL) {
+      return -1;
+   }
    int memop = regs->a1;
    BYTE value;
-   /* 
-    * TODO THIS DUMMY CREATE EMPTY PROC TO AVOID COMPILER NOTIFY 
-    *      need to be eliminated
-	*/
-   struct pcb_t *caller = malloc(sizeof(struct pcb_t));
-   caller->krnl = malloc(sizeof(struct krnl_t));
+   struct pcb_t *caller = NULL; //con trỏ chỉ pcb đang gọi syscall
+   pthread_mutex_lock(&queue_lock);
+   //duyệt running_list để tìm pcb tương ứng (dựa vào pid) và gán cho caller
+   for (int i = 0; i < krnl->running_list->size; i++) {
+      if (krnl->running_list->proc[i] != NULL && krnl->running_list->proc[i]->pid == pid) {
+         caller = krnl->running_list->proc[i];
+         break;
+      }
+   }
+   pthread_mutex_unlock(&queue_lock);
 
-   /*
-    * @bksysnet: Please note in the dual spacing design
-    *            syscall implementations are in kernel space.
-    */
+   if (caller == NULL) {
+      return -1;
+   }
 
-   /* TODO: Traverse proclist to terminate the proc
-    *       stcmp to check the process match proc_name
-    */
-
-    /* TODO Maching and marking the process */
-    /* user process are not allowed to access directly pcb in kernel space of syscall */
-    //....
-
+   //điều hướng các thao tác dựa vào memop
    switch (memop) {
    case SYSMEM_MAP_OP:
-            /* Reserved process case*/
 			vmap_pgd_memset(caller, regs->a2, regs->a3);
             break;
    case SYSMEM_INC_OP:
