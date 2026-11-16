@@ -30,8 +30,10 @@ int __sys_memmap(struct krnl_t *krnl, uint32_t pid, struct sc_regs* regs)
     * TODO THIS DUMMY CREATE EMPTY PROC TO AVOID COMPILER NOTIFY 
     *      need to be eliminated
 	*/
-   struct pcb_t *caller = malloc(sizeof(struct pcb_t));
-   caller->krnl = malloc(sizeof(struct krnl_t));
+   int ret = 0;
+   struct pcb_t *caller = calloc(1, sizeof(struct pcb_t));
+   caller->krnl = krnl;     /* SV2: use the real kernel (was an empty malloc) */
+   caller->pid = pid;
 
    /*
     * @bksysnet: Please note in the dual spacing design
@@ -55,19 +57,22 @@ int __sys_memmap(struct krnl_t *krnl, uint32_t pid, struct sc_regs* regs)
             inc_vma_limit(caller, regs->a2, regs->a3);
             break;
    case SYSMEM_SWP_OP:
-            __mm_swap_page(caller, regs->a2, regs->a3);
+            /* a2 = RAM frame, a3 = SWAP frame, a4 = direction (0: RAM->SWAP, 1: SWAP->RAM) */
+            ret = __mm_swap_page_dir(caller, regs->a2, regs->a3, (int)regs->a4);
             break;
    case SYSMEM_IO_READ:
-            MEMPHY_read(krnl->mram, regs->a2, &value);
-            regs->a3 = value;
+            value = 0;
+            ret = MEMPHY_read(krnl->mram, regs->a2, &value);
+            regs->a3 = (unsigned char)value;
             break;
    case SYSMEM_IO_WRITE:
-            MEMPHY_write(krnl->mram, regs->a2, regs->a3);
+            ret = MEMPHY_write(krnl->mram, regs->a2, (BYTE)regs->a3);
             break;
    default:
             printf("Memop code: %d\n", memop);
             break;
    }
-   
-   return 0;
+
+   free(caller);
+   return ret;
 }

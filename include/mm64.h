@@ -54,12 +54,30 @@
 
 
 /* Masks */
-#define PAGING64_ADDR_OFFST_MASK  GENMASK64(PAGING_ADDR_OFFST_HIBIT,PAGING_ADDR_OFFST_LOBIT)
+#define PAGING64_ADDR_OFFST_MASK  GENMASK64(PAGING64_ADDR_OFFST_HIBIT,PAGING64_ADDR_OFFST_LOBIT)
 #define PAGING64_ADDR_PT_MASK  GENMASK64(PAGING64_ADDR_PT_HIBIT,PAGING64_ADDR_PT_LOBIT)
 #define PAGING64_ADDR_PMD_MASK  GENMASK64(PAGING64_ADDR_PMD_HIBIT,PAGING64_ADDR_PMD_LOBIT)
 #define PAGING64_ADDR_PUD_MASK  GENMASK64(PAGING64_ADDR_PUD_HIBIT,PAGING64_ADDR_PUD_LOBIT)
 #define PAGING64_ADDR_P4D_MASK  GENMASK64(PAGING64_ADDR_P4D_HIBIT,PAGING64_ADDR_P4D_LOBIT)
 #define PAGING64_ADDR_PGD_MASK  GENMASK64(PAGING64_ADDR_PGD_HIBIT,PAGING64_ADDR_PGD_LOBIT)
 
+/* A kernel region (kmalloc) is a symbol-table entry tagged with this vmaid:
+ * its rg_start/rg_end are physical addresses of MEMRAM, not virtual ones. */
+#define KRNL_RG_VMAID (-1)
+
+/* Statistics of the 5-level page table (see pgtbl_get_stats) */
+struct pgtbl_stats {
+	addr_t tables[5];     /* tables allocated: [0]=PGD [1]=P4D [2]=PUD [3]=PMD [4]=PT */
+	addr_t table_bytes;   /* memory used by all those tables */
+	addr_t mapped_pages;  /* pages with a PTE */
+	addr_t max_pgn;       /* highest mapped page number */
+	addr_t flat_bytes;    /* size of one flat table covering page 0 .. max_pgn */
+};
+
+int pgtbl_get_stats(struct mm_struct *mm, struct pgtbl_stats *st);
+void pgtbl_access_stats(unsigned long *walks, unsigned long *reads);
+int print_pgtbl_stats(struct pcb_t *caller);
+int print_pgtbl_entries(struct pcb_t *caller, addr_t start, addr_t end);
+void free_pgtbl(struct mm_struct *mm);
 
 #endif
