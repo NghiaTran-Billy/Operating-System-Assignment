@@ -25,3 +25,5 @@ int libkmem_malloc(struct pcb_t*, uint32_t, uint32_t);
 int libkmem_copy_from_user(struct pcb_t*, uint32_t, uint32_t, uint32_t, uint32_t);
 int libkmem_copy_to_user(struct pcb_t*, uint32_t, uint32_t, uint32_t, uint32_t);
 int libmem_dma_memcpy(struct pcb_t*, uint32_t, uint32_t, uint32_t, uint32_t);
+int free_pcb_memph(struct pcb_t *);       /* give back every frame of a finished process */
+unsigned long libmem_swap_count(int);     /* swap statistics: 0 = pages swapped out, 1 = pages swapped in */

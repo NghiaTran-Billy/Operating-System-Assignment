@@ -13,6 +13,12 @@
 
 #include <stdint.h>
 
+/* MM64 (which decides the width of addr_t) is defined in os-cfg.h: make sure it
+ * is seen before the typedefs below, whatever the include order of the .c file. */
+#ifndef OSCFG_H
+#include "os-cfg.h"
+#endif
+
 #define MM_PAGING
 #define PAGING_MAX_MMSWP 4 /* max number of supported swapped space */
 #define PAGING_MAX_SYMTBL_SZ 30

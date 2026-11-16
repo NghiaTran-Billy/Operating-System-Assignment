@@ -46,10 +46,34 @@ struct vm_area_struct *get_vma_by_num(struct mm_struct *mm, int vmaid)
   return pvma;
 }
 
+/*__mm_swap_page_dir - copy one page between RAM and the active SWAP device
+ *@caller: caller (only caller->krnl is used)
+ *@ramfpn: frame number in MEMRAM
+ *@swpfpn: frame number in the active MEMSWP
+ *@dir: 0 = swap OUT (RAM -> SWAP), otherwise swap IN (SWAP -> RAM)
+ *Return 0 on success, -1 on error.
+ */
+int __mm_swap_page_dir(struct pcb_t *caller, addr_t ramfpn, addr_t swpfpn, int dir)
+{
+    struct krnl_t *krnl;
+
+    if (caller == NULL || (krnl = caller->krnl) == NULL)
+        return -1;
+    if (krnl->mram == NULL || krnl->active_mswp == NULL)
+        return -1;
+
+    if (dir == 0)
+        return __swap_cp_page(krnl->mram, ramfpn, krnl->active_mswp, swpfpn);
+
+    return __swap_cp_page(krnl->active_mswp, swpfpn, krnl->mram, ramfpn);
+}
+
+/*__mm_swap_page - swap OUT: copy victim frame (RAM) to a swap frame
+ *Kept with the original signature, used by SYSMEM_SWP_OP.
+ */
 int __mm_swap_page(struct pcb_t *caller, addr_t vicfpn , addr_t swpfpn)
 {
-    __swap_cp_page(caller->krnl->mram, vicfpn, caller->krnl->active_mswp, swpfpn);
-    return 0;
+    return __mm_swap_page_dir(caller, vicfpn, swpfpn, 0);
 }
 
 /*get_vm_area_node - get vm area for a number of pages
